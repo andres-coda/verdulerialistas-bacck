@@ -49,3 +49,10 @@ export interface EditarPedidoProp<P> extends Omit<EditarProp<P>, 'qR'> {
   user: User;
 }
 
+export interface CreateDefault<P> extends Omit<CreateProp<P>, 'dto'>{}
+
+export interface GetPaginadoProp<T> extends GetProp<T> {
+  pagina: number;
+  limite: number;
+}
+

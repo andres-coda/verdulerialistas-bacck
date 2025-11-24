@@ -16,7 +16,7 @@ export class ProductoController extends BaseController<Producto> {
   constructor(
     private readonly productoService: ProductoService,
   ) {
-    super(productoService, "producto", ['rubro', 'proveedores'])
+    super(productoService, "producto", ['rubro', 'proveedores'], 'nombre')
   }
 
   @Post()

@@ -2,8 +2,9 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Base } from './entity/Base.entity';
 import { EntityTarget, FindManyOptions, FindOneOptions, Repository } from 'typeorm';
 import { ErroresService } from '../error/error.service';
-import { GetProp, GetIdProp, DeletProp, CreateProp, EditarProp, GetIdsProp } from '../interface/serviceGeneric.interface';
+import { GetProp, GetIdProp, DeletProp, CreateProp, EditarProp, GetIdsProp, GetPaginadoProp } from '../interface/serviceGeneric.interface';
 import { Producto } from '../producto/entity/Producto.entity';
+import { PaginacionResponse } from '../interface/paginacion-response.interface';
 
 @Injectable()
 export abstract class BaseService<T extends Base, CrearDto, EditarDto> {
@@ -15,7 +16,64 @@ export abstract class BaseService<T extends Base, CrearDto, EditarDto> {
   abstract createDato({ user, dto, qR }: CreateProp<CrearDto>): Promise<T>;
   abstract updateDato({ userId, dto, qR, id }: EditarProp<EditarDto>): Promise<T>;
 
-  async getDato({ qR, relaciones = [], entidadError = undefined, userId }: GetProp<T>): Promise<T[]> {
+  async getDatoPaginado({
+    qR,
+    relaciones = [],
+    entidadError = undefined,
+    userId,
+    pagina,
+    limite,
+    orden
+  }: GetPaginadoProp<T>): Promise<PaginacionResponse<T>> {
+    try {
+      const skip = (pagina - 1) * limite;
+
+      const criterio: FindManyOptions = {
+        relations: [...(relaciones as string[]), 'user'],
+        select: {
+          user: { id: true }
+        },
+        where: {
+          deleted: false,
+          user: { id: userId },
+        } as any,
+        order: { orden: 'ASC' } as any,
+        skip,
+        take: limite
+      };
+
+      let datos: T[];
+      let total: number;
+
+      if (qR) {
+        const target: EntityTarget<T> = this.baseRepository.target;
+        [datos, total] = await qR.manager.findAndCount<T>(target, criterio);
+      } else {
+        [datos, total] = await this.baseRepository.findAndCount(criterio);
+      }
+
+      const totalPaginas = Math.ceil(total / limite);
+
+      return {
+        datos,
+        meta: {
+          paginaActual: pagina,
+          itemsPorPagina: limite,
+          totalItems: total,
+          totalPaginas,
+          tienePaginaAnterior: pagina > 1,
+          tienePaginaSiguiente: pagina < totalPaginas
+        }
+      };
+    } catch (error) {
+      throw this.erroresService.handleExceptions(
+        error,
+        `Error al intentar leer los datos paginados ${entidadError && `de ${entidadError}`}`
+      );
+    }
+  }
+
+  async getDato({ qR, relaciones = [], entidadError = undefined, userId, orden }: GetProp<T>): Promise<T[]> {
     try {
       const criterio: FindManyOptions = {
         relations: [...(relaciones as string[]), 'user'],
@@ -25,7 +83,8 @@ export abstract class BaseService<T extends Base, CrearDto, EditarDto> {
         where: {
           deleted: false,
           user: { id: userId }
-        } as any
+        } as any,
+        ...(orden && { order: { [orden]: 'ASC' } }),
       }
       if (qR) {
         const target: EntityTarget<T> = this.baseRepository.target;
@@ -60,12 +119,12 @@ export abstract class BaseService<T extends Base, CrearDto, EditarDto> {
     }
   }
 
-  async getDatosByIds({ids, entidadError, relaciones, qR, userId }:GetIdsProp<T>): Promise<T[]> {
+  async getDatosByIds({ ids, entidadError, relaciones, qR, userId }: GetIdsProp<T>): Promise<T[]> {
     try {
-      const datos:T[] = [];
-      if(ids.length === 0) return datos;
-      for(const id of ids){
-        const dato:T = await this.getDatoByIdOrFail({id, qR, relaciones, entidadError, userId});
+      const datos: T[] = [];
+      if (ids.length === 0) return datos;
+      for (const id of ids) {
+        const dato: T = await this.getDatoByIdOrFail({ id, qR, relaciones, entidadError, userId });
         datos.push(dato);
       }
       return datos;
@@ -130,8 +189,8 @@ export abstract class BaseService<T extends Base, CrearDto, EditarDto> {
     try {
       const dato: T | null = await this.getDatoById({ id, qR, entidadError, userId });
       if (!dato) throw new NotFoundException(`No existe dato con id ${id} en la base de datos`);
-      if(!dato.deleted) return dato;
-      
+      if (!dato.deleted) return dato;
+
       dato.deleted = false;
 
       const saved: T = qR

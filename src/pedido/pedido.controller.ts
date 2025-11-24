@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
 import { PedidoService } from './pedido.service';
 import { BaseController } from '../base/base.controller';
 import { Pedido } from './entity/Pedido.entity';
@@ -10,6 +10,8 @@ import { CrearPedido } from './dto/CrearPedido.dto';
 import { CreateProp, EditarPedidoProp, EditarProp } from '../interface/serviceGeneric.interface';
 import { AuthParcialDto } from '../auth/dto/authParcial.dto';
 import { EditarPedido } from './dto/EditarPedido.dto';
+import { PaginacionPedidoDto } from './dto/dto/paginacion-pedido.dto';
+import { PaginacionResponse } from '../interface/paginacion-response.interface';
 
 @Controller('pedido')
 export class PedidoController extends BaseController<Pedido> {
@@ -18,6 +20,24 @@ export class PedidoController extends BaseController<Pedido> {
   ) {
     super(pedidoService, "pedido", ['proveedor'])
   }
+
+  @Get('paginado')
+  @HttpCode(200)
+  @UseGuards(UsuarioGuard, AdminGuard)
+  async findAllPaginado(
+    @Query() paginacionDto: PaginacionPedidoDto,
+    @UsuarioActual() usuario: AuthParcialDto,
+  ): Promise<PaginacionResponse<Pedido>> {
+    return await this.pedidoService.getDatoPaginado({
+      userId: usuario.sub,
+      relaciones: ['proveedor'],
+      entidadError: 'pedidos paginados',
+      pagina: paginacionDto.pagina || 1,
+      limite: paginacionDto.limite || 30,
+      orden: 'fecha'
+    });
+  }
+
 
   @Get(':id')
   @HttpCode(200)
@@ -58,7 +78,7 @@ export class PedidoController extends BaseController<Pedido> {
       dto: datos,
       userId: user.id,
       id,
-      user:user
+      user: user
     }
     const pedido: Pedido = await this.pedidoService.updateDato(dto);
     return pedido;

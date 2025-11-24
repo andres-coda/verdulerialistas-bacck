@@ -9,6 +9,8 @@ import { UserController } from './user.controller';
 import { Producto } from '../producto/entity/Producto.entity';
 import { Proveedor } from '../proveedor/entity/Proveedor.entity';
 import { Rubro } from '../rubro/entity/Rubro.entity';
+import { RubroModule } from '../rubro/rubro.module';
+import { ProductoModule } from '../producto/producto.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { Rubro } from '../rubro/entity/Rubro.entity';
     forwardRef(() => AuthModule),
     forwardRef(() => UserModule),
     forwardRef(() => ErroresModule),
+    forwardRef(() => RubroModule),
+    forwardRef(() => ProductoModule),
   ],
   controllers: [UserController],
   providers: [UserService],

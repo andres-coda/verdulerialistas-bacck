@@ -4,7 +4,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { FindOneOptions, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ErroresService } from '../error/error.service';
-import { CreateProp, EditarProp, GetIdProp, GetNameProp } from '../interface/serviceGeneric.interface';
+import { CreateDefault, CreateProp, EditarProp, GetIdProp, GetNameProp } from '../interface/serviceGeneric.interface';
 import { CrearRubro } from './dto/CrearRubro.dto';
 import { EditarRubro } from './dto/EditarRubro.dto';
 
@@ -101,6 +101,28 @@ export class RubroService extends BaseService<Rubro, CrearRubro, EditarRubro> {
       return newRubro;
     } catch (er) {
       throw this.erroresService.handleExceptions(er, `Error al intentar actualizar el rubro`)
+    }
+  }
+
+  private rubroDefault:CrearRubro[] = [
+    { nombre: 'Verduras de hoja' },
+    { nombre: 'Verduras de fruta' },
+    { nombre: 'Frutas' },
+    { nombre: 'Citricos' },
+    { nombre: 'Bolsas' },
+    { nombre: 'Frutos secos' },
+  ];
+
+  async crearRubrosDefault({ user, qR }: CreateDefault<CrearRubro>): Promise<Rubro[]> {
+    try {
+      const rubros: Rubro[] = [];
+      for (const dto of this.rubroDefault) {
+        const rubro: Rubro = await this.createDato({ user, qR, dto });
+        rubros.push(rubro);
+      }
+      return rubros;
+    } catch (error) {
+      throw this.erroresService.handleExceptions(error, `Error al intentar crear rubros por default`)
     }
   }
 }

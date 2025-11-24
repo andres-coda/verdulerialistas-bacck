@@ -26,7 +26,7 @@ export abstract class BaseController<T extends Base> {
       userId:usuario.sub, 
       entidadError:this.entidadError,
       relaciones: this.relaciones,
-      orden: this.orden
+      orden: this.orden 
     });
   }
 
