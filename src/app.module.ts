@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserModule } from './user/user.module';
 import { ErroresModule } from './error/error.module';
 import { User } from './user/entity/User.entity';
@@ -25,25 +25,18 @@ import { Pedido } from './pedido/entity/Pedido.entity';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '3306', 10),
-      username: process.env.DB_USERNAME || 'root',
-      password: process.env.DB_PASSWORD || 'root',
-      database: process.env.DB_NAME || 'backend_listas',
-      ssl: false,
-      entities: [
-        Base,
-        User,
-        Producto,
-        Rubro,
-        Proveedor,
-        PedidoProducto,
-        Pedido
-      ],
-      synchronize: true,
-      logging: false,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        type: 'postgres',
+        url: config.get<string>('DATABASE_URL'),
+        ssl: {
+          rejectUnauthorized: false, // IMPORTANTE: Render requiere SSL
+        },
+        autoLoadEntities: true, // si usás forFeature() para los módulos
+        synchronize: false, // poner false en producción
+      }),
+      inject: [ConfigService],
     }),
     UserModule,
     ErroresModule,
