@@ -5,7 +5,7 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-   app.enableCors({
+  app.enableCors({
     origin: ['http://localhost:3000', 'tauri://localhost', 'https://listasverduleria.free.nf'], // Especifica tu frontend
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -21,6 +21,7 @@ async function bootstrap() {
       },
     }),
   );
-  await app.listen(process.env.PORT ?? 3030);
+  const port = process.env.PORT || 3000;
+  await app.listen(port, '0.0.0.0');
 }
 bootstrap();
