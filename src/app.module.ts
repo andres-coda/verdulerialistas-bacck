@@ -34,7 +34,7 @@ import { Pedido } from './pedido/entity/Pedido.entity';
           rejectUnauthorized: false, // IMPORTANTE: Render requiere SSL
         },
         autoLoadEntities: true, // si usás forFeature() para los módulos
-        synchronize: false, // poner false en producción
+        synchronize: true, // poner false en producción
       }),
       inject: [ConfigService],
     }),
